@@ -119,16 +119,26 @@ void* handle_request(void* arg) {
     pthread_exit(NULL);
     return NULL;
   }
-  fputs("HTTP/1.0 200 OK\r\n", writeFile);
+  fputs("HTTP/1.1 200 OK\r\n", writeFile);
   fputs("Content-type: text/html\r\n", writeFile);
-  fputs("Content-length: 5\r\n\r\n", writeFile);
-  char htmlBuf[50];
+  // fputs("Content-length: 5\r\n\r\n", writeFile);
+  fputs("Transfer-Encoding: chunked\r\n\r\n",writeFile);
+  char htmlBuf[50],
+    tempBuf[5];
 
+  int tmpLen = 0;
   while(fgets(htmlBuf,50, readHtml) != NULL) {
+    tmpLen = strlen(htmlBuf);
+    sprintf(tempBuf, "%x", tmpLen);
+    fputs(tempBuf, writeFile);
+    fputs("\r\n", writeFile);
     fputs(htmlBuf, writeFile);
+    fputs("\r\n", writeFile);
     fflush(writeFile);
     memset(htmlBuf, 0, 50);
+    memset(tempBuf, 0, 5);
   }
+  fputs("0\r\n\r\n", writeFile);
 
   fflush(writeFile);
   shutdown(fileno(writeFile), SHUT_WR);
